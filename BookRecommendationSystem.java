@@ -1,8 +1,5 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 class Book {
     String title;
@@ -26,6 +23,7 @@ class Book {
 public class BookRecommendationSystem {
 
     private static final List<Book> books = new ArrayList<>();
+    private static final Map<String, List<Book>> userPreferences = new HashMap<>();
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -47,6 +45,9 @@ public class BookRecommendationSystem {
                     recommendBooks();
                     break;
                 case 5:
+                    advancedRecommendations();
+                    break;
+                case 6:
                     System.out.println("Exiting...");
                     System.exit(0);
                     break;
@@ -55,16 +56,6 @@ public class BookRecommendationSystem {
                     break;
             }
         }
-    }
-
-    public static void showMenu() {
-        System.out.println("\n--- Book Recommendation System ---");
-        System.out.println("1. Add Book");
-        System.out.println("2. View Books");
-        System.out.println("3. Search Books");
-        System.out.println("4. Get Recommendations");
-        System.out.println("5. Exit");
-        System.out.print("Select an option: ");
     }
 
     public static void addBook() {
@@ -78,7 +69,12 @@ public class BookRecommendationSystem {
         double rating = scanner.nextDouble();
         scanner.nextLine();
 
-        books.add(new Book(title, author, genre, rating));
+        Book book = new Book(title, author, genre, rating);
+        books.add(book);
+        System.out.print("Enter your name to save your preferences: ");
+        String userName = scanner.nextLine();
+        userPreferences.computeIfAbsent(userName, k -> new ArrayList<>()).add(book);
+
         System.out.println("Book added successfully.");
     }
 
@@ -98,13 +94,13 @@ public class BookRecommendationSystem {
 
         switch (sortChoice) {
             case 1:
-                Collections.sort(books, Comparator.comparing(book -> book.title));
+                books.sort(Comparator.comparing(book -> book.title));
                 break;
             case 2:
-                Collections.sort(books, Comparator.comparing(book -> book.author));
+                books.sort(Comparator.comparing(book -> book.author));
                 break;
             case 3:
-                Collections.sort(books, Comparator.comparing(book -> book.rating));
+                books.sort(Comparator.comparing(book -> book.rating));
                 break;
             default:
                 System.out.println("Invalid option. Displaying unsorted list.");
@@ -218,4 +214,45 @@ public class BookRecommendationSystem {
             System.out.println("No recommendations available with a rating of " + minRating + " or higher.");
         }
     }
+
+    public static void advancedRecommendations() {
+        System.out.print("Enter your name to get personalized recommendations: ");
+        String userName = scanner.nextLine();
+        List<Book> preferences = userPreferences.get(userName);
+
+        if (preferences == null || preferences.isEmpty()) {
+            System.out.println("No preferences found for user: " + userName);
+            return;
+        }
+
+        Set<Book> recommendedBooks = new HashSet<>();
+        for (Book preference : preferences) {
+            List<Book> similarBooks = books.stream()
+                    .filter(book -> !book.title.equalsIgnoreCase(preference.title))
+                    .filter(book -> book.genre.equalsIgnoreCase(preference.genre) || book.rating >= preference.rating)
+                    .collect(Collectors.toList());
+            recommendedBooks.addAll(similarBooks);
+        }
+
+        System.out.println("\n--- Personalized Recommendations ---");
+        for (Book book : recommendedBooks) {
+            System.out.println(book);
+        }
+
+        if (recommendedBooks.isEmpty()) {
+            System.out.println("No personalized recommendations available.");
+        }
+    }
+
+    public static void showMenu() {
+        System.out.println("\n--- Book Recommendation System ---");
+        System.out.println("1. Add Book");
+        System.out.println("2. View Books");
+        System.out.println("3. Search Books");
+        System.out.println("4. Get Recommendations");
+        System.out.println("5. Get Advanced Recommendations");
+        System.out.println("6. Exit");
+        System.out.print("Select an option: ");
+    }
+
 }
