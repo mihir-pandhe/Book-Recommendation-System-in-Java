@@ -44,6 +44,9 @@ public class BookRecommendationSystem {
                     searchBooks();
                     break;
                 case 4:
+                    recommendBooks();
+                    break;
+                case 5:
                     System.out.println("Exiting...");
                     System.exit(0);
                     break;
@@ -59,7 +62,8 @@ public class BookRecommendationSystem {
         System.out.println("1. Add Book");
         System.out.println("2. View Books");
         System.out.println("3. Search Books");
-        System.out.println("4. Exit");
+        System.out.println("4. Get Recommendations");
+        System.out.println("5. Exit");
         System.out.print("Select an option: ");
     }
 
@@ -161,6 +165,57 @@ public class BookRecommendationSystem {
         }
         if (!found) {
             System.out.println("No books found in the genre: " + genre);
+        }
+    }
+
+    public static void recommendBooks() {
+        System.out.println("\nChoose recommendation option:");
+        System.out.println("1. Recommend by Genre");
+        System.out.println("2. Recommend by Rating");
+        System.out.print("Select an option: ");
+        int recommendChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (recommendChoice) {
+            case 1:
+                recommendByGenre();
+                break;
+            case 2:
+                recommendByRating();
+                break;
+            default:
+                System.out.println("Invalid option. Returning to main menu.");
+                break;
+        }
+    }
+
+    public static void recommendByGenre() {
+        System.out.print("Enter genre for recommendation: ");
+        String genre = scanner.nextLine();
+        boolean found = false;
+        for (Book book : books) {
+            if (book.genre.equalsIgnoreCase(genre)) {
+                System.out.println(book);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No recommendations available for the genre: " + genre);
+        }
+    }
+
+    public static void recommendByRating() {
+        System.out.print("Enter minimum rating for recommendation (0.0 - 5.0): ");
+        double minRating = scanner.nextDouble();
+        boolean found = false;
+        for (Book book : books) {
+            if (book.rating >= minRating) {
+                System.out.println(book);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No recommendations available with a rating of " + minRating + " or higher.");
         }
     }
 }
