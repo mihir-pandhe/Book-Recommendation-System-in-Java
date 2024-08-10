@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,6 +15,11 @@ class Book {
         this.author = author;
         this.genre = genre;
         this.rating = rating;
+    }
+
+    @Override
+    public String toString() {
+        return "Title: " + title + ", Author: " + author + ", Genre: " + genre + ", Rating: " + rating;
     }
 }
 
@@ -31,7 +38,7 @@ public class BookRecommendationSystem {
                     addBook();
                     break;
                 case 2:
-                    System.out.println("Feature not yet implemented.");
+                    viewBooks();
                     break;
                 case 3:
                     System.out.println("Exiting...");
@@ -65,5 +72,40 @@ public class BookRecommendationSystem {
 
         books.add(new Book(title, author, genre, rating));
         System.out.println("Book added successfully.");
+    }
+
+    public static void viewBooks() {
+        if (books.isEmpty()) {
+            System.out.println("No books available.");
+            return;
+        }
+
+        System.out.println("\nChoose sorting option:");
+        System.out.println("1. Sort by Title");
+        System.out.println("2. Sort by Author");
+        System.out.println("3. Sort by Rating");
+        System.out.print("Select an option: ");
+        int sortChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (sortChoice) {
+            case 1:
+                Collections.sort(books, Comparator.comparing(book -> book.title));
+                break;
+            case 2:
+                Collections.sort(books, Comparator.comparing(book -> book.author));
+                break;
+            case 3:
+                Collections.sort(books, Comparator.comparing(book -> book.rating));
+                break;
+            default:
+                System.out.println("Invalid option. Displaying unsorted list.");
+                break;
+        }
+
+        System.out.println("\n--- Book List ---");
+        for (Book book : books) {
+            System.out.println(book);
+        }
     }
 }
