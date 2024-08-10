@@ -2,16 +2,32 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 class Book {
-    String title;
-    String author;
-    String genre;
-    double rating;
+    private final String title;
+    private final String author;
+    private final String genre;
+    private final double rating;
 
-    Book(String title, String author, String genre, double rating) {
+    public Book(String title, String author, String genre, double rating) {
         this.title = title;
         this.author = author;
         this.genre = genre;
         this.rating = rating;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public double getRating() {
+        return rating;
     }
 
     @Override
@@ -20,10 +36,78 @@ class Book {
     }
 }
 
+class UserPreferences {
+    private final Map<String, List<Book>> preferences = new HashMap<>();
+
+    public void addBookForUser(String userName, Book book) {
+        preferences.computeIfAbsent(userName, k -> new ArrayList<>()).add(book);
+    }
+
+    public List<Book> getBooksForUser(String userName) {
+        return preferences.getOrDefault(userName, new ArrayList<>());
+    }
+}
+
+class BookManager {
+    private final List<Book> books = new ArrayList<>();
+
+    public void addBook(String title, String author, String genre, double rating) {
+        books.add(new Book(title, author, genre, rating));
+    }
+
+    public List<Book> getBooks() {
+        return books;
+    }
+
+    public List<Book> getBooksSortedByTitle() {
+        return books.stream().sorted(Comparator.comparing(Book::getTitle)).collect(Collectors.toList());
+    }
+
+    public List<Book> getBooksSortedByAuthor() {
+        return books.stream().sorted(Comparator.comparing(Book::getAuthor)).collect(Collectors.toList());
+    }
+
+    public List<Book> getBooksSortedByRating() {
+        return books.stream().sorted(Comparator.comparing(Book::getRating)).collect(Collectors.toList());
+    }
+
+    public List<Book> searchBooksByTitle(String title) {
+        return books.stream().filter(book -> book.getTitle().equalsIgnoreCase(title)).collect(Collectors.toList());
+    }
+
+    public List<Book> searchBooksByGenre(String genre) {
+        return books.stream().filter(book -> book.getGenre().equalsIgnoreCase(genre)).collect(Collectors.toList());
+    }
+
+    public List<Book> recommendBooksByGenre(String genre) {
+        return books.stream().filter(book -> book.getGenre().equalsIgnoreCase(genre)).collect(Collectors.toList());
+    }
+
+    public List<Book> recommendBooksByRating(double minRating) {
+        return books.stream().filter(book -> book.getRating() >= minRating).collect(Collectors.toList());
+    }
+}
+
+class RecommendationEngine {
+    public Set<Book> generatePersonalizedRecommendations(List<Book> preferences, List<Book> allBooks) {
+        Set<Book> recommendedBooks = new HashSet<>();
+        for (Book preference : preferences) {
+            List<Book> similarBooks = allBooks.stream()
+                    .filter(book -> !book.getTitle().equalsIgnoreCase(preference.getTitle()))
+                    .filter(book -> book.getGenre().equalsIgnoreCase(preference.getGenre())
+                            || book.getRating() >= preference.getRating())
+                    .collect(Collectors.toList());
+            recommendedBooks.addAll(similarBooks);
+        }
+        return recommendedBooks;
+    }
+}
+
 public class BookRecommendationSystem {
 
-    private static final List<Book> books = new ArrayList<>();
-    private static final Map<String, List<Book>> userPreferences = new HashMap<>();
+    private static final BookManager bookManager = new BookManager();
+    private static final UserPreferences userPreferences = new UserPreferences();
+    private static final RecommendationEngine recommendationEngine = new RecommendationEngine();
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -58,6 +142,17 @@ public class BookRecommendationSystem {
         }
     }
 
+    public static void showMenu() {
+        System.out.println("\n--- Book Recommendation System ---");
+        System.out.println("1. Add Book");
+        System.out.println("2. View Books");
+        System.out.println("3. Search Books");
+        System.out.println("4. Get Recommendations");
+        System.out.println("5. Get Advanced Recommendations");
+        System.out.println("6. Exit");
+        System.out.print("Select an option: ");
+    }
+
     public static void addBook() {
         System.out.print("Enter book title: ");
         String title = scanner.nextLine();
@@ -69,17 +164,16 @@ public class BookRecommendationSystem {
         double rating = scanner.nextDouble();
         scanner.nextLine();
 
-        Book book = new Book(title, author, genre, rating);
-        books.add(book);
+        bookManager.addBook(title, author, genre, rating);
         System.out.print("Enter your name to save your preferences: ");
         String userName = scanner.nextLine();
-        userPreferences.computeIfAbsent(userName, k -> new ArrayList<>()).add(book);
+        userPreferences.addBookForUser(userName, new Book(title, author, genre, rating));
 
         System.out.println("Book added successfully.");
     }
 
     public static void viewBooks() {
-        if (books.isEmpty()) {
+        if (bookManager.getBooks().isEmpty()) {
             System.out.println("No books available.");
             return;
         }
@@ -92,23 +186,25 @@ public class BookRecommendationSystem {
         int sortChoice = scanner.nextInt();
         scanner.nextLine();
 
+        List<Book> sortedBooks;
         switch (sortChoice) {
             case 1:
-                books.sort(Comparator.comparing(book -> book.title));
+                sortedBooks = bookManager.getBooksSortedByTitle();
                 break;
             case 2:
-                books.sort(Comparator.comparing(book -> book.author));
+                sortedBooks = bookManager.getBooksSortedByAuthor();
                 break;
             case 3:
-                books.sort(Comparator.comparing(book -> book.rating));
+                sortedBooks = bookManager.getBooksSortedByRating();
                 break;
             default:
                 System.out.println("Invalid option. Displaying unsorted list.");
+                sortedBooks = bookManager.getBooks();
                 break;
         }
 
         System.out.println("\n--- Book List ---");
-        for (Book book : books) {
+        for (Book book : sortedBooks) {
             System.out.println(book);
         }
     }
@@ -121,46 +217,33 @@ public class BookRecommendationSystem {
         int searchChoice = scanner.nextInt();
         scanner.nextLine();
 
+        List<Book> searchResults;
         switch (searchChoice) {
             case 1:
-                searchByTitle();
+                System.out.print("Enter title to search: ");
+                String title = scanner.nextLine();
+                searchResults = bookManager.searchBooksByTitle(title);
                 break;
             case 2:
-                searchByGenre();
+                System.out.print("Enter genre to search: ");
+                String genre = scanner.nextLine();
+                searchResults = bookManager.searchBooksByGenre(genre);
                 break;
             default:
                 System.out.println("Invalid option. Returning to main menu.");
-                break;
+                return;
         }
+
+        displaySearchResults(searchResults);
     }
 
-    public static void searchByTitle() {
-        System.out.print("Enter title to search: ");
-        String title = scanner.nextLine();
-        boolean found = false;
-        for (Book book : books) {
-            if (book.title.equalsIgnoreCase(title)) {
+    public static void displaySearchResults(List<Book> searchResults) {
+        if (searchResults.isEmpty()) {
+            System.out.println("No matching books found.");
+        } else {
+            for (Book book : searchResults) {
                 System.out.println(book);
-                found = true;
             }
-        }
-        if (!found) {
-            System.out.println("No books found with the title: " + title);
-        }
-    }
-
-    public static void searchByGenre() {
-        System.out.print("Enter genre to search: ");
-        String genre = scanner.nextLine();
-        boolean found = false;
-        for (Book book : books) {
-            if (book.genre.equalsIgnoreCase(genre)) {
-                System.out.println(book);
-                found = true;
-            }
-        }
-        if (!found) {
-            System.out.println("No books found in the genre: " + genre);
         }
     }
 
@@ -172,87 +255,56 @@ public class BookRecommendationSystem {
         int recommendChoice = scanner.nextInt();
         scanner.nextLine();
 
+        List<Book> recommendations;
         switch (recommendChoice) {
             case 1:
-                recommendByGenre();
+                System.out.print("Enter genre for recommendation: ");
+                String genre = scanner.nextLine();
+                recommendations = bookManager.recommendBooksByGenre(genre);
                 break;
             case 2:
-                recommendByRating();
+                System.out.print("Enter minimum rating for recommendation (0.0 - 5.0): ");
+                double minRating = scanner.nextDouble();
+                recommendations = bookManager.recommendBooksByRating(minRating);
                 break;
             default:
                 System.out.println("Invalid option. Returning to main menu.");
-                break;
+                return;
         }
+
+        displayRecommendations(recommendations);
     }
 
-    public static void recommendByGenre() {
-        System.out.print("Enter genre for recommendation: ");
-        String genre = scanner.nextLine();
-        boolean found = false;
-        for (Book book : books) {
-            if (book.genre.equalsIgnoreCase(genre)) {
+    public static void displayRecommendations(List<Book> recommendations) {
+        if (recommendations.isEmpty()) {
+            System.out.println("No recommendations available.");
+        } else {
+            for (Book book : recommendations) {
                 System.out.println(book);
-                found = true;
             }
-        }
-        if (!found) {
-            System.out.println("No recommendations available for the genre: " + genre);
-        }
-    }
-
-    public static void recommendByRating() {
-        System.out.print("Enter minimum rating for recommendation (0.0 - 5.0): ");
-        double minRating = scanner.nextDouble();
-        boolean found = false;
-        for (Book book : books) {
-            if (book.rating >= minRating) {
-                System.out.println(book);
-                found = true;
-            }
-        }
-        if (!found) {
-            System.out.println("No recommendations available with a rating of " + minRating + " or higher.");
         }
     }
 
     public static void advancedRecommendations() {
         System.out.print("Enter your name to get personalized recommendations: ");
         String userName = scanner.nextLine();
-        List<Book> preferences = userPreferences.get(userName);
+        List<Book> preferences = userPreferences.getBooksForUser(userName);
 
-        if (preferences == null || preferences.isEmpty()) {
-            System.out.println("No preferences found for user: " + userName);
+        if (preferences.isEmpty()) {
+            System.out.println("No preferences found for this user.");
             return;
         }
 
-        Set<Book> recommendedBooks = new HashSet<>();
-        for (Book preference : preferences) {
-            List<Book> similarBooks = books.stream()
-                    .filter(book -> !book.title.equalsIgnoreCase(preference.title))
-                    .filter(book -> book.genre.equalsIgnoreCase(preference.genre) || book.rating >= preference.rating)
-                    .collect(Collectors.toList());
-            recommendedBooks.addAll(similarBooks);
-        }
+        Set<Book> personalizedRecommendations = recommendationEngine.generatePersonalizedRecommendations(preferences,
+                bookManager.getBooks());
 
-        System.out.println("\n--- Personalized Recommendations ---");
-        for (Book book : recommendedBooks) {
-            System.out.println(book);
-        }
-
-        if (recommendedBooks.isEmpty()) {
+        if (personalizedRecommendations.isEmpty()) {
             System.out.println("No personalized recommendations available.");
+        } else {
+            System.out.println("\n--- Personalized Recommendations ---");
+            for (Book book : personalizedRecommendations) {
+                System.out.println(book);
+            }
         }
     }
-
-    public static void showMenu() {
-        System.out.println("\n--- Book Recommendation System ---");
-        System.out.println("1. Add Book");
-        System.out.println("2. View Books");
-        System.out.println("3. Search Books");
-        System.out.println("4. Get Recommendations");
-        System.out.println("5. Get Advanced Recommendations");
-        System.out.println("6. Exit");
-        System.out.print("Select an option: ");
-    }
-
 }
