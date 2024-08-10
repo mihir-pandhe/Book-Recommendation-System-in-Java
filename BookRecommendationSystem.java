@@ -95,6 +95,7 @@ class RecommendationEngine {
             List<Book> similarBooks = allBooks.stream()
                     .filter(book -> !book.getTitle().equalsIgnoreCase(preference.getTitle()))
                     .filter(book -> book.getGenre().equalsIgnoreCase(preference.getGenre())
+
                             || book.getRating() >= preference.getRating())
                     .collect(Collectors.toList());
             recommendedBooks.addAll(similarBooks);
@@ -112,32 +113,39 @@ public class BookRecommendationSystem {
 
     public static void main(String[] args) {
         while (true) {
-            showMenu();
-            int choice = scanner.nextInt();
-            scanner.nextLine();
-            switch (choice) {
-                case 1:
-                    addBook();
-                    break;
-                case 2:
-                    viewBooks();
-                    break;
-                case 3:
-                    searchBooks();
-                    break;
-                case 4:
-                    recommendBooks();
-                    break;
-                case 5:
-                    advancedRecommendations();
-                    break;
-                case 6:
-                    System.out.println("Exiting...");
-                    System.exit(0);
-                    break;
-                default:
-                    System.out.println("Invalid option. Please try again.");
-                    break;
+            try {
+                showMenu();
+                int choice = getInputAsInt("Select an option: ");
+                scanner.nextLine();
+                switch (choice) {
+                    case 1:
+                        addBook();
+                        break;
+                    case 2:
+                        viewBooks();
+                        break;
+                    case 3:
+                        searchBooks();
+                        break;
+                    case 4:
+                        recommendBooks();
+                        break;
+                    case 5:
+                        advancedRecommendations();
+                        break;
+                    case 6:
+                        System.out.println("Exiting...");
+                        System.exit(0);
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a valid number.");
+                scanner.nextLine();
+            } catch (Exception e) {
+                System.out.println("An unexpected error occurred: " + e.getMessage());
             }
         }
     }
@@ -150,7 +158,24 @@ public class BookRecommendationSystem {
         System.out.println("4. Get Recommendations");
         System.out.println("5. Get Advanced Recommendations");
         System.out.println("6. Exit");
-        System.out.print("Select an option: ");
+    }
+
+    public static int getInputAsInt(String prompt) {
+        System.out.print(prompt);
+        while (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a number.");
+            scanner.next();
+        }
+        return scanner.nextInt();
+    }
+
+    public static double getInputAsDouble(String prompt) {
+        System.out.print(prompt);
+        while (!scanner.hasNextDouble()) {
+            System.out.println("Invalid input. Please enter a valid number.");
+            scanner.next();
+        }
+        return scanner.nextDouble();
     }
 
     public static void addBook() {
@@ -160,8 +185,7 @@ public class BookRecommendationSystem {
         String author = scanner.nextLine();
         System.out.print("Enter book genre: ");
         String genre = scanner.nextLine();
-        System.out.print("Enter book rating (0.0 - 5.0): ");
-        double rating = scanner.nextDouble();
+        double rating = getInputAsDouble("Enter book rating (0.0 - 5.0): ");
         scanner.nextLine();
 
         bookManager.addBook(title, author, genre, rating);
@@ -182,8 +206,7 @@ public class BookRecommendationSystem {
         System.out.println("1. Sort by Title");
         System.out.println("2. Sort by Author");
         System.out.println("3. Sort by Rating");
-        System.out.print("Select an option: ");
-        int sortChoice = scanner.nextInt();
+        int sortChoice = getInputAsInt("Select an option: ");
         scanner.nextLine();
 
         List<Book> sortedBooks;
@@ -213,8 +236,7 @@ public class BookRecommendationSystem {
         System.out.println("\nChoose search option:");
         System.out.println("1. Search by Title");
         System.out.println("2. Search by Genre");
-        System.out.print("Select an option: ");
-        int searchChoice = scanner.nextInt();
+        int searchChoice = getInputAsInt("Select an option: ");
         scanner.nextLine();
 
         List<Book> searchResults;
@@ -251,8 +273,7 @@ public class BookRecommendationSystem {
         System.out.println("\nChoose recommendation option:");
         System.out.println("1. Recommend by Genre");
         System.out.println("2. Recommend by Rating");
-        System.out.print("Select an option: ");
-        int recommendChoice = scanner.nextInt();
+        int recommendChoice = getInputAsInt("Select an option: ");
         scanner.nextLine();
 
         List<Book> recommendations;
@@ -263,8 +284,8 @@ public class BookRecommendationSystem {
                 recommendations = bookManager.recommendBooksByGenre(genre);
                 break;
             case 2:
-                System.out.print("Enter minimum rating for recommendation (0.0 - 5.0): ");
-                double minRating = scanner.nextDouble();
+                double minRating = getInputAsDouble("Enter minimum rating for recommendation (0.0 - 5.0): ");
+                scanner.nextLine();
                 recommendations = bookManager.recommendBooksByRating(minRating);
                 break;
             default:
@@ -279,6 +300,7 @@ public class BookRecommendationSystem {
         if (recommendations.isEmpty()) {
             System.out.println("No recommendations available.");
         } else {
+            System.out.println("\n--- Recommended Books ---");
             for (Book book : recommendations) {
                 System.out.println(book);
             }
