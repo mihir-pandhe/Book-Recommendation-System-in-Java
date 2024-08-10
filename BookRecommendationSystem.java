@@ -41,6 +41,9 @@ public class BookRecommendationSystem {
                     viewBooks();
                     break;
                 case 3:
+                    searchBooks();
+                    break;
+                case 4:
                     System.out.println("Exiting...");
                     System.exit(0);
                     break;
@@ -55,7 +58,8 @@ public class BookRecommendationSystem {
         System.out.println("\n--- Book Recommendation System ---");
         System.out.println("1. Add Book");
         System.out.println("2. View Books");
-        System.out.println("3. Exit");
+        System.out.println("3. Search Books");
+        System.out.println("4. Exit");
         System.out.print("Select an option: ");
     }
 
@@ -106,6 +110,57 @@ public class BookRecommendationSystem {
         System.out.println("\n--- Book List ---");
         for (Book book : books) {
             System.out.println(book);
+        }
+    }
+
+    public static void searchBooks() {
+        System.out.println("\nChoose search option:");
+        System.out.println("1. Search by Title");
+        System.out.println("2. Search by Genre");
+        System.out.print("Select an option: ");
+        int searchChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (searchChoice) {
+            case 1:
+                searchByTitle();
+                break;
+            case 2:
+                searchByGenre();
+                break;
+            default:
+                System.out.println("Invalid option. Returning to main menu.");
+                break;
+        }
+    }
+
+    public static void searchByTitle() {
+        System.out.print("Enter title to search: ");
+        String title = scanner.nextLine();
+        boolean found = false;
+        for (Book book : books) {
+            if (book.title.equalsIgnoreCase(title)) {
+                System.out.println(book);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No books found with the title: " + title);
+        }
+    }
+
+    public static void searchByGenre() {
+        System.out.print("Enter genre to search: ");
+        String genre = scanner.nextLine();
+        boolean found = false;
+        for (Book book : books) {
+            if (book.genre.equalsIgnoreCase(genre)) {
+                System.out.println(book);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No books found in the genre: " + genre);
         }
     }
 }
